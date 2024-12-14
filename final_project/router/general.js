@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
@@ -40,50 +41,64 @@ public_users.post("/register", (req,res) => {
 });
 
 // Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  //Write your code here
-  res.send(JSON.stringify(books,null,4));
-  //return res.status(300).json({message: "Yet to be implemented"});
+public_users.get('/', async (req, res) => {
+    try {
+        const response = await axios.get('http://localhost:5000/books');
+        res.send(response.data);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch books", error: error.message });
+    }
 });
 
 // Get book details based on ISBN
-public_users.get('/isbn/:isbn',function (req, res) {
-  //Write your code here
-  const isbn = req.params.isbn; 
-  res.send(JSON.stringify(books[isbn],null,4));
-  //return res.status(300).json({message: "Yet to be implemented"});
- });
-  
+public_users.get('/isbn/:isbn', async (req, res) => {
+    try {
+        const isbn = req.params.isbn;
+        const response = await axios.get(`http://localhost:5000/books/${isbn}`);
+        res.send(response.data);
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch book by ISBN", error: error.message });
+    }
+});
+
 // Get book details based on author
-public_users.get('/author/:author',function (req, res) {
-  //Write your code here
-  const author = req.params.author;
-  const results = Object.values(books).filter(book => book.author === author);
-  res.send(JSON.stringify(results,null,4));
-  //return res.status(300).json({message: "Yet to be implemented"});
+public_users.get('/author/:author', async (req, res) => {
+    try {
+        const author = req.params.author;
+        const response = await axios.get('http://localhost:5000/books');
+        const results = Object.values(response.data).filter(book => book.author === author);
+        res.send(JSON.stringify(results, null, 4));
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch books by author", error: error.message });
+    }
 });
 
 // Get all books based on title
-public_users.get('/title/:title',function (req, res) {
-  //Write your code here
-  const title = req.params.title;
-  const result = Object.values(books).filter(book => book.title === title);
-  res.send(JSON.stringify(result,null,4));
-  //return res.status(300).json({message: "Yet to be implemented"});
-});
-
-//  Get book review
-public_users.get('/review/:isbn',function (req, res) {
-    //Write your code here
-    const isbn = req.params.isbn;
-    const book = books[isbn];
-    //res.send(JSON.stringify(book.review,null,4));
-    if (Object.keys(book.reviews).length > 0){
-      res.send(book.reviews);
-    } else {
-      res.send("No reviews available for the book " + isbn);
+public_users.get('/title/:title', async (req, res) => {
+    try {
+        const title = req.params.title;
+        const response = await axios.get('http://localhost:5000/books');
+        const results = Object.values(response.data).filter(book => book.title === title);
+        res.send(JSON.stringify(results, null, 4));
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch books by title", error: error.message });
     }
-    //return res.status(300).json({message: "Yet to be implemented"});
 });
 
+// Get book reviews
+public_users.get('/review/:isbn', async (req, res) => {
+    try {
+        const isbn = req.params.isbn;
+        const response = await axios.get(`http://localhost:5000/books/${isbn}`);
+        const book = response.data;
+
+        if (book && book.reviews && Object.keys(book.reviews).length > 0) {
+            res.send(book.reviews);
+        } else {
+            res.send(`No reviews available for the book ${isbn}`);
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch book reviews", error: error.message });
+    }
+});
 module.exports.general = public_users;

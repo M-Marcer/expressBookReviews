@@ -88,6 +88,34 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
   }
 });
 
+
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+    // Check if the user is logged in by verifying session
+    if (!req.session.authorization) {
+        return res.status(401).json({ message: "You need to log in first" });
+    }
+
+    const username = req.session.authorization.username; // Get the username from session
+    const isbn = req.params.isbn; // Get the ISBN from the URL parameter
+
+    // Find the book by ISBN (assuming 'books' is an object or array where books are stored)
+    const book = books[isbn]; // Assuming books is an object with ISBN as the key
+
+    if (!book) {
+        return res.status(404).json({ message: "Book not found" });
+    }
+
+    // Check if the book has reviews
+    if (!book.reviews || !book.reviews[username]) {
+        return res.status(404).json({ message: "Review not found for this user" });
+    }
+
+    // Delete the user's review
+    delete book.reviews[username];
+
+    return res.status(200).json({ message: "Review deleted successfully" });
+});
+
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
 module.exports.users = users;
