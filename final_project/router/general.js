@@ -43,7 +43,7 @@ public_users.post("/register", (req,res) => {
 // Get the book list available in the shop
 public_users.get('/', async (req, res) => {
     try {
-        const response = await axios.get('http://localhost:5000/books');
+        const response = await axios.get('http://localhost/books');
         res.send(response.data);
     } catch (error) {
         res.status(500).json({ message: "Failed to fetch books", error: error.message });
