@@ -19,6 +19,7 @@ app.use("/customer/auth/*", function auth(req,res,next){
         jwt.verify(token, "access", (err, user) => {
             if (!err) {
                 req.user = user;
+                res.send("Current token :" + token);
                 next(); // Proceed to the next middleware
             } else {
                 return res.status(403).json({ message: "User not authenticated" });
@@ -34,4 +35,4 @@ const PORT =5000;
 app.use("/customer", customer_routes);
 app.use("/", genl_routes);
 
-app.listen(PORT,()=>console.log("Server is running"));
+app.listen(PORT,()=>console.log("Server is running on port" +  PORT));
