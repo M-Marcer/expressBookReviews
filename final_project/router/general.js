@@ -3,6 +3,7 @@ const axios = require('axios');
 let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
+
 const public_users = express.Router();
 
 // Check if a user with the given username already exists
@@ -40,65 +41,115 @@ public_users.post("/register", (req,res) => {
   //return res.status(300).json({message: "Yet to be implemented"});
 });
 
-// Get the book list available in the shop
+// Get all books
 public_users.get('/', async (req, res) => {
     try {
-        const response = await axios.get('http://localhost/books');
-        res.send(response.data);
+        const booksPromise = new Promise((resolve, reject) => {
+            // Simulating an asynchronous task (e.g., fetching books)
+            if (books) {
+                resolve(books); // Resolve the promise with the books data
+            } else {
+                reject(new Error("Books data not found")); // Reject if something goes wrong
+            }
+        });
+
+        const bookList = await booksPromise; // Wait for the promise to resolve
+        res.send(bookList); // Send the resolved data
     } catch (error) {
         res.status(500).json({ message: "Failed to fetch books", error: error.message });
     }
 });
 
-// Get book details based on ISBN
-public_users.get('/isbn/:isbn', async (req, res) => {
-    try {
-        const isbn = req.params.isbn;
-        const response = await axios.get(`http://localhost:5000/books/${isbn}`);
-        res.send(response.data);
-    } catch (error) {
-        res.status(500).json({ message: "Failed to fetch book by ISBN", error: error.message });
-    }
+// Get book by isbn
+public_users.get('/isbn/:isbn', (req, res) => {
+    const isbn = req.params.isbn;
+
+    // Creating a promise to handle the operation
+    const fetchBookByISBN = new Promise((resolve, reject) => {
+        const book = books[isbn]; // Assuming 'books' is an object with ISBN as keys
+        if (book) {
+            resolve(book); // Resolve the promise with the book details
+        } else {
+            reject(new Error("Book not found")); // Reject if the book does not exist
+        }
+    });
+
+    // Using .then() and .catch() to handle the promise
+    fetchBookByISBN
+        .then(bookDetails => {
+            res.send(bookDetails); // Send the book details when the promise resolves
+        })
+        .catch(error => {
+            res.status(404).json({ message: "Failed to fetch book by ISBN", error: error.message });
+        });
 });
+
 
 // Get book details based on author
 public_users.get('/author/:author', async (req, res) => {
-    try {
-        const author = req.params.author;
-        const response = await axios.get('http://localhost:5000/books');
-        const results = Object.values(response.data).filter(book => book.author === author);
-        res.send(JSON.stringify(results, null, 4));
-    } catch (error) {
-        res.status(500).json({ message: "Failed to fetch books by author", error: error.message });
-    }
+    const author = req.params.author;
+
+    const fetchBookAuthor = new Promise(( resolve, reject) => {
+        const book = Object.values(books).filter(book =>  book.author === author);
+        if (book) {
+            resolve(book);
+        } else {
+            reject(new Error("Book not found"));
+        };
+    });
+
+    fetchBookAuthor 
+    .then(bookDetails => {
+        res.send(bookDetails); // Send the book details when the promise resolves
+    })
+    .catch(error => {
+        res.status(404).json({ message: "Failed to fetch book by author", error: error.message });
+    });
 });
+
 
 // Get all books based on title
 public_users.get('/title/:title', async (req, res) => {
-    try {
-        const title = req.params.title;
-        const response = await axios.get('http://localhost:5000/books');
-        const results = Object.values(response.data).filter(book => book.title === title);
-        res.send(JSON.stringify(results, null, 4));
-    } catch (error) {
-        res.status(500).json({ message: "Failed to fetch books by title", error: error.message });
-    }
+    const title = req.params.title;
+
+    const fetchBookTitle = new Promise(( resolve, reject) => {
+        const book = Object.values(books).filter(book =>  book.title === title);
+        if (book) {
+            resolve(book);
+        } else {
+            reject(new Error("Book not found"));
+        };
+    });
+
+    fetchBookTitle
+    .then(bookDetails => {
+        res.send(bookDetails); // Send the book details when the promise resolves
+    })
+    .catch(error => {
+        res.status(404).json({ message: "Failed to fetch book by title", error: error.message });
+    });
 });
 
 // Get book reviews
 public_users.get('/review/:isbn', async (req, res) => {
-    try {
-        const isbn = req.params.isbn;
-        const response = await axios.get(`http://localhost:5000/books/${isbn}`);
-        const book = response.data;
+    const isbn = req.params.isbn;
 
-        if (book && book.reviews && Object.keys(book.reviews).length > 0) {
-            res.send(book.reviews);
+    const fetchReview = new Promise((resolve,reject)=>{
+        const book = books[isbn];
+        if (book) {
+            resolve(book);
         } else {
-            res.send(`No reviews available for the book ${isbn}`);
-        }
-    } catch (error) {
-        res.status(500).json({ message: "Failed to fetch book reviews", error: error.message });
-    }
+            reject(new Error("Book not found"));
+        };
+    });
+
+    fetchReview
+    .then(bookDetails => {
+        res.send(bookDetails.reviews);
+    })
+    .catch(error => {
+        res.status(404).json({ message: "Failed to fetch book review", error: error.message });
+    });
 });
+
 module.exports.general = public_users;
